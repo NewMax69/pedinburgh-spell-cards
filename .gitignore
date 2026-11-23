@@ -1,0 +1,34 @@
+node_modules/
+.next/
+.open-next/
+.wrangler/
+.tmp/
+.edge/
+.edge-cdp/
+.edge-profile/
+.vercel/
+.npm-cache/
+.cache/
+out/
+*.log
+tsconfig.tsbuildinfo
+
+# ключ деплоя и скриншоты
+deploy/id_ed25519
+deploy/id_ed25519.pub
+ref/
+samples/
+exports/
+
+# тяжёлые выгрузки таблицы — в репозитории только снимок
+data/*.json
+!data/spells.json
+
+# локальные выгрузки Google Таблицы
+sheet0.csv
+sheet_edit.html
+workbook.xlsx
+fetchsheet.cjs
+fetchmeta.cjs
+fetchxlsx.cjs
+testsheet.cjs
