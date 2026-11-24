@@ -20,6 +20,8 @@ export interface Spell {
   upgrade: string;
   /** Официальное описание из таблицы (до авторской адаптации) */
   official?: string;
+  /** Классы, которым доступно заклинание (из TTG Club) */
+  classes?: string[];
   status: SpellStatus;
   source?: string;
   /** URL или idb:<key> */

@@ -16,11 +16,11 @@ import {
   RANGE,
   RITUAL,
   TITLE,
-  notchedSquarePath,
 } from "./card-spec";
 import { getCardLayout } from "./card-layout";
 import { DIGIT_PATHS, RITUAL_PATH } from "./digit-paths";
 import { dataUrlToBytes, resolveArtSrc } from "./art-src";
+import { getFramePng } from "./frame-png";
 import { fontsReady } from "./measure";
 import { getUnits } from "./client-store";
 import { convertRange } from "./units";
@@ -174,10 +174,16 @@ async function drawCard(
     color: hexToRgb(theme.header),
   });
 
-  // Рамка иллюстрации: белая пластина, картинка с вырезанными углами, две обводки.
+  // Рамка иллюстрации: картинка в окне + единый PNG-слой рамки (без заплаток на углах).
   const frameX = x + ILLU.x;
   const frameY = yTop - ILLU.y;
-  page.drawSvgPath(notchedSquarePath(0), { x: frameX, y: frameY, color: paper });
+  page.drawRectangle({
+    x: frameX + 3,
+    y: frameY - 57,
+    width: 54,
+    height: 54,
+    color: paper,
+  });
 
   const artSrc = await resolveArtSrc(spell);
   const art = await embedImage(doc, artSrc, images);
@@ -189,32 +195,16 @@ async function drawCard(
       height: 54,
     });
   }
-  for (const [cx, cy] of [
-    [3, 3],
-    [53, 3],
-    [3, 53],
-    [53, 53],
-  ]) {
-    page.drawRectangle({
-      x: frameX + cx,
-      y: frameY - cy - 4,
-      width: 4,
-      height: 4,
-      color: paper,
+  const frameSrc = await getFramePng(theme.ink, theme.paper);
+  const frame = await embedImage(doc, frameSrc, images);
+  if (frame) {
+    page.drawImage(frame, {
+      x: frameX,
+      y: frameY - 60,
+      width: 60,
+      height: 60,
     });
   }
-  page.drawSvgPath(notchedSquarePath(0.5), {
-    x: frameX,
-    y: frameY,
-    borderColor: ink,
-    borderWidth: 1,
-  });
-  page.drawSvgPath(notchedSquarePath(3.5), {
-    x: frameX,
-    y: frameY,
-    borderColor: ink,
-    borderWidth: 1,
-  });
 
   // Ритуал — ромб 14×16 под бейджем уровня.
   if (spell.ritual) {

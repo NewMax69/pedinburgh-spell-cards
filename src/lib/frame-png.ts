@@ -1,10 +1,10 @@
-import { FRAME_INNER, FRAME_OUTER, FRAME_STROKE } from "./card-spec";
+import { FRAME_LAYERS } from "./card-spec";
 
 const cache = new Map<string, string>();
 
 /**
- * Растр белой рамки иллюстрации (прозрачный центр) для вставки в PDF.
- * Рисуем из того же SVG-пути, что и DOM, при 10× для печати.
+ * Растр рамки иллюстрации (прозрачное окно внутри) для вставки в PDF.
+ * Рисуется из тех же путей, что и DOM, при 10× для печати.
  */
 export async function getFramePng(ink = "#141313", paper = "#FFFFFF"): Promise<string> {
   const key = `${ink}|${paper}`;
@@ -12,22 +12,30 @@ export async function getFramePng(ink = "#141313", paper = "#FFFFFF"): Promise<s
   if (hit) return hit;
 
   const size = 600;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 60 60">
-    <path d="${FRAME_OUTER} ${FRAME_INNER}" fill="${paper}" fill-rule="evenodd"/>
-    <path d="${FRAME_OUTER}" fill="none" stroke="${ink}" stroke-width="${FRAME_STROKE}"/>
-    <path d="${FRAME_INNER}" fill="none" stroke="${ink}" stroke-width="${FRAME_STROKE}"/>
-  </svg>`;
-
-  const url = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
-  const image = new Image();
-  image.src = url;
-  await image.decode();
-
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(image, 0, 0, size, size);
+  ctx.scale(size / 60, size / 60);
+
+  const plate = new Path2D(FRAME_LAYERS.plate);
+  const window = new Path2D(FRAME_LAYERS.clip);
+
+  // белая паспарту
+  ctx.fillStyle = paper;
+  ctx.fill(plate);
+  // прозрачное окно под иллюстрацию
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fill(window);
+  ctx.globalCompositeOperation = "source-over";
+
+  // две чёрные обводки
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1;
+  ctx.lineJoin = "bevel";
+  ctx.stroke(new Path2D(FRAME_LAYERS.outerStroke));
+  ctx.stroke(new Path2D(FRAME_LAYERS.innerStroke));
+
   const png = canvas.toDataURL("image/png");
   cache.set(key, png);
   return png;

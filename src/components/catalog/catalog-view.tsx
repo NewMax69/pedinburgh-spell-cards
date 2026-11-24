@@ -53,6 +53,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
   const [sort, setSort] = useState<SortKey>("level");
   const [adaptation, setAdaptation] = useState<"all" | "edited" | "raw">("all");
   const [components, setComponents] = useState<string[]>([]);
+  const [classFilter, setClassFilter] = useState<string[]>([]);
   const [casting, setCasting] = useState("");
   const [range, setRange] = useState("");
   const [duration, setDuration] = useState("");
@@ -104,6 +105,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       casting: uniq(all.map((spell) => spell.casting)),
       range: uniq(all.map((spell) => spell.range)),
       duration: uniq(all.map((spell) => spell.duration)),
+      classes: uniq(all.flatMap((spell) => spell.classes ?? [])),
     };
   }, [all]);
 
@@ -120,6 +122,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       if (adaptation === "edited" && !isAdapted) return false;
       if (adaptation === "raw" && isAdapted) return false;
       if (components.length && !components.every((letter) => hasComponent(spell.components, letter))) return false;
+      if (classFilter.length && !classFilter.some((name) => (spell.classes ?? []).includes(name))) return false;
       if (casting && spell.casting !== casting) return false;
       if (range && spell.range !== range) return false;
       if (duration && spell.duration !== duration) return false;
@@ -137,7 +140,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       if (sort === "school") return a.school.localeCompare(b.school, "ru") || a.name.localeCompare(b.name, "ru");
       return a.level - b.level || a.name.localeCompare(b.name, "ru");
     });
-  }, [all, levels, schools, ritualOnly, adaptation, components, casting, range, duration, concentration, query, sort]);
+  }, [all, levels, schools, ritualOnly, adaptation, components, classFilter, casting, range, duration, concentration, query, sort]);
 
   const groups = useMemo(() => {
     const map = new Map<number, Spell[]>();
@@ -198,6 +201,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
     ritualOnly ||
     adaptation !== "all" ||
     components.length > 0 ||
+    classFilter.length > 0 ||
     Boolean(casting || range || duration) ||
     concentration ||
     query.trim().length > 0;
@@ -209,6 +213,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
     setQuery("");
     setAdaptation("all");
     setComponents([]);
+    setClassFilter([]);
     setCasting("");
     setRange("");
     setDuration("");
@@ -491,6 +496,33 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
 
           {advancedOpen ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2">
+              <div className="flex w-full flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-muted">Классы:</span>
+                {options.classes.map((name) => {
+                  const active = classFilter.includes(name);
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() =>
+                        setClassFilter((prev) =>
+                          prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+                        )
+                      }
+                      aria-pressed={active}
+                      className={cn(
+                        "inline-flex h-6 items-center rounded-full border px-2 text-[11px] font-semibold",
+                        active
+                          ? "border-accent bg-accent-soft text-accent-deep"
+                          : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
+                      )}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+
               <span className="text-[11px] font-semibold text-muted">Компоненты:</span>
               {["В", "С", "М"].map((letter) => {
                 const active = components.includes(letter);
