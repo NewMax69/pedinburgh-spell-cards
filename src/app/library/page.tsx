@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
+import { ArtOverrides } from "@/components/catalog/art-overrides";
 import { ScaledCard } from "@/components/card/scaled-card";
 import { levelText, useCustomCards, useSelection } from "@/lib/client-store";
 import { normalizeSchool } from "@/lib/schools";
@@ -84,6 +85,8 @@ export default function LibraryPage() {
             })}
           </div>
         )}
+
+        <ArtOverrides />
       </main>
     </div>
   );

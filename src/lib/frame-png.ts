@@ -2,6 +2,46 @@ import { FRAME_LAYERS } from "./card-spec";
 
 const cache = new Map<string, string>();
 
+/** Обрезает иллюстрацию по форме окна (4 pt на углах), чтобы в PDF не было затеканий. */
+export async function clipArtPng(src: string): Promise<string> {
+  const hit = cache.get(`art|${src}`);
+  if (hit) return hit;
+  try {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.src = src;
+    await image.decode();
+    const size = 540;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(image, 0, 0, size, size);
+    const d = 4 * (size / 54);
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.beginPath();
+    ctx.moveTo(0, d);
+    ctx.lineTo(d, d);
+    ctx.lineTo(d, 0);
+    ctx.lineTo(size - d, 0);
+    ctx.lineTo(size - d, d);
+    ctx.lineTo(size, d);
+    ctx.lineTo(size, size - d);
+    ctx.lineTo(size - d, size - d);
+    ctx.lineTo(size - d, size);
+    ctx.lineTo(d, size);
+    ctx.lineTo(d, size - d);
+    ctx.lineTo(0, size - d);
+    ctx.closePath();
+    ctx.fill();
+    const png = canvas.toDataURL("image/png");
+    cache.set(`art|${src}`, png);
+    return png;
+  } catch {
+    return src;
+  }
+}
+
 /**
  * Растр рамки иллюстрации (прозрачное окно внутри) для вставки в PDF.
  * Рисуется из тех же путей, что и DOM, при 10× для печати.

@@ -75,7 +75,10 @@ export function parseMarkup(text: string): Run[] {
 }
 
 export function paragraphRuns(text: string, labels = true): Run[] {
-  const value = (text ?? "").trim();
+  // несколько пробелов подряд сохраняем неразрывными, иначе HTML/PDF их схлопывают
+  const value = (text ?? "")
+    .trim()
+    .replace(/ {2,}/g, (spaces) => "\u00A0".repeat(spaces.length));
   if (!value) return [];
   const lead = labels ? leadingLabel(value) : null;
   if (lead) {
@@ -93,10 +96,10 @@ function tokenize(runs: Run[], size: number, italic: boolean): Token[] {
   for (const run of runs) {
     if (!run.text) continue;
     const it = runItalic(run, italic);
-    const parts = run.text.split(/(\s+)/);
+    const parts = run.text.split(/([ \t]+)/);
     for (const part of parts) {
       if (!part) continue;
-      if (/^\s+$/.test(part)) {
+      if (/^[ \t]+$/.test(part)) {
         tokens.push({ runs: [], space: true, width: spaceWidth(size, !!run.bold, it) });
       } else {
         tokens.push({

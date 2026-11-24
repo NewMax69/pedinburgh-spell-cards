@@ -95,6 +95,14 @@ export async function loadSpells(force = false): Promise<SheetSnapshot> {
   }
 
   const spells = normalizeRows(rows);
+  // классы есть только в снимке (спарсены с TTG) — переносим их на свежие данные
+  const classesByName = new Map(
+    SNAPSHOT_SPELLS.filter((spell) => spell.classes?.length).map((spell) => [spell.name, spell.classes!])
+  );
+  for (const spell of spells) {
+    const classes = classesByName.get(spell.name);
+    if (classes) spell.classes = classes;
+  }
   memory = { spells, fetchedAt: Date.now(), source: "google", errors };
   return memory;
 }

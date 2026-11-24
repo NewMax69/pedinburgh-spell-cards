@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
-import { ArtOverrides } from "@/components/catalog/art-overrides";
 import { CardTile } from "@/components/catalog/card-tile";
 import { SelectionBar } from "@/components/catalog/selection-bar";
 import { SpellDialog } from "@/components/catalog/spell-dialog";
@@ -51,13 +50,13 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
   const [ritualOnly, setRitualOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("level");
-  const [adaptation, setAdaptation] = useState<"all" | "edited" | "raw">("all");
+  const [adaptedOnly, setAdaptedOnly] = useState(false);
+  const [rawOnly, setRawOnly] = useState(false);
   const [components, setComponents] = useState<string[]>([]);
   const [classFilter, setClassFilter] = useState<string[]>([]);
   const [casting, setCasting] = useState("");
   const [range, setRange] = useState("");
   const [duration, setDuration] = useState("");
-  const [concentration, setConcentration] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [detail, setDetail] = useState<Spell | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -119,14 +118,13 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       if (schools.length > 0 && !schools.includes(spell.school)) return false;
       if (ritualOnly && !spell.ritual) return false;
       const isAdapted = Boolean(spell.custom) || spell.status === "edited";
-      if (adaptation === "edited" && !isAdapted) return false;
-      if (adaptation === "raw" && isAdapted) return false;
+      if (adaptedOnly && !isAdapted) return false;
+      if (rawOnly && isAdapted) return false;
       if (components.length && !components.every((letter) => hasComponent(spell.components, letter))) return false;
       if (classFilter.length && !classFilter.some((name) => (spell.classes ?? []).includes(name))) return false;
       if (casting && spell.casting !== casting) return false;
       if (range && spell.range !== range) return false;
       if (duration && spell.duration !== duration) return false;
-      if (concentration && !/конц/i.test(spell.duration)) return false;
       if (!needle) return true;
       return (
         spell.name.toLowerCase().includes(needle) ||
@@ -140,7 +138,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       if (sort === "school") return a.school.localeCompare(b.school, "ru") || a.name.localeCompare(b.name, "ru");
       return a.level - b.level || a.name.localeCompare(b.name, "ru");
     });
-  }, [all, levels, schools, ritualOnly, adaptation, components, classFilter, casting, range, duration, concentration, query, sort]);
+  }, [all, levels, schools, ritualOnly, adaptedOnly, rawOnly, components, classFilter, casting, range, duration, query, sort]);
 
   const groups = useMemo(() => {
     const map = new Map<number, Spell[]>();
@@ -199,11 +197,11 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
     levels.length > 0 ||
     schools.length > 0 ||
     ritualOnly ||
-    adaptation !== "all" ||
+    adaptedOnly ||
+    rawOnly ||
     components.length > 0 ||
     classFilter.length > 0 ||
     Boolean(casting || range || duration) ||
-    concentration ||
     query.trim().length > 0;
 
   const resetFilters = () => {
@@ -211,13 +209,13 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
     setSchools([]);
     setRitualOnly(false);
     setQuery("");
-    setAdaptation("all");
+    setAdaptedOnly(false);
+    setRawOnly(false);
     setComponents([]);
     setClassFilter([]);
     setCasting("");
     setRange("");
     setDuration("");
-    setConcentration(false);
   };
 
   const bulkAdd = (list: Spell[], close = true) => {
@@ -385,18 +383,60 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
               Ритуал
             </button>
 
-            <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
+          </div>
 
-            <select
-              value={adaptation}
-              onChange={(event) => setAdaptation(event.target.value as "all" | "edited" | "raw")}
-              className="h-7 rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
-              aria-label="Адаптация"
-            >
-              <option value="all">Адаптация: все</option>
-              <option value="edited">Адаптированные</option>
-              <option value="raw">Неадаптированные</option>
-            </select>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-muted">Классы:</span>
+            {options.classes.map((name) => {
+              const active = classFilter.includes(name);
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() =>
+                    setClassFilter((prev) =>
+                      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+                    )
+                  }
+                  aria-pressed={active}
+                  className={cn(
+                    "inline-flex h-7 shrink-0 items-center rounded-full border px-2.5 text-[11.5px] font-semibold transition-colors",
+                    active
+                      ? "border-accent bg-accent-soft text-accent-deep"
+                      : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
+                  )}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
+              <input
+                type="checkbox"
+                checked={adaptedOnly}
+                onChange={(event) => {
+                  setAdaptedOnly(event.target.checked);
+                  if (event.target.checked) setRawOnly(false);
+                }}
+                className="h-3.5 w-3.5 accent-[#28624A]"
+              />
+              адаптированные
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
+              <input
+                type="checkbox"
+                checked={rawOnly}
+                onChange={(event) => {
+                  setRawOnly(event.target.checked);
+                  if (event.target.checked) setAdaptedOnly(false);
+                }}
+                className="h-3.5 w-3.5 accent-[#28624A]"
+              />
+              не адаптированные
+            </label>
 
             <button
               type="button"
@@ -420,19 +460,17 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                   className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line-strong bg-white px-2.5 text-[11.5px] font-semibold text-ink-soft transition-colors hover:border-ink/25 hover:text-ink"
                 >
                   <Layers className="h-3.5 w-3.5" />
-                  Добавить всё
+                  Наборы для печати
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {bulkOpen ? (
-                  <div className="absolute right-0 top-9 z-40 w-[300px] overflow-hidden rounded-xl border border-line bg-white p-1 shadow-lift">
-                    <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
-                      Добавить в набор
-                    </p>
+                  <div className="absolute right-0 top-9 z-40 w-[280px] overflow-hidden rounded-xl border border-line bg-white p-1 shadow-lift">
                     {[
-                      ["Всё отфильтрованное", filtered],
-                      ["Все адаптированные", adapted],
-                      ["Все неадаптированные", all.filter((spell) => !adapted.includes(spell))],
-                      ["Все ритуалы", rituals],
+                      ["Текущие фильтры", filtered],
+                      ["Адаптированные", adapted],
+                      ["Неадаптированные", all.filter((spell) => !adapted.includes(spell))],
+                      ["Ритуалы", rituals],
+                      ["Все карточки", all],
                     ].map(([label, list]) => (
                       <button
                         key={label as string}
@@ -444,37 +482,6 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                         <span className="text-[11px] text-muted">{(list as Spell[]).length}</span>
                       </button>
                     ))}
-
-                    <div className="my-1 h-px bg-line/70" />
-                    <p className="px-2.5 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
-                      По выбранным фильтрам
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!byLevels.length}
-                      onClick={() => bulkAdd(byLevels)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {levels.length ? `Выбранные круги (${levels.length})` : "Выберите круги"}
-                      <span className="text-[11px] text-muted">{byLevels.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!bySchools.length}
-                      onClick={() => bulkAdd(bySchools)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {schools.length ? `Выбранные школы (${schools.length})` : "Выберите школы"}
-                      <span className="text-[11px] text-muted">{bySchools.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => bulkAdd(all)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper"
-                    >
-                      Вообще все карточки
-                      <span className="text-[11px] text-muted">{all.length}</span>
-                    </button>
                   </div>
                 ) : null}
               </div>
@@ -487,42 +494,13 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                   className="h-8 rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
                 >
                   <option value="level">По кругу</option>
-                  <option value="name">По названию</option>
                   <option value="school">По школе</option>
                 </select>
               </div>
             </div>
           </div>
-
           {advancedOpen ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2">
-              <div className="flex w-full flex-wrap items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-muted">Классы:</span>
-                {options.classes.map((name) => {
-                  const active = classFilter.includes(name);
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() =>
-                        setClassFilter((prev) =>
-                          prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
-                        )
-                      }
-                      aria-pressed={active}
-                      className={cn(
-                        "inline-flex h-6 items-center rounded-full border px-2 text-[11px] font-semibold",
-                        active
-                          ? "border-accent bg-accent-soft text-accent-deep"
-                          : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
-                      )}
-                    >
-                      {name}
-                    </button>
-                  );
-                })}
-              </div>
-
               <span className="text-[11px] font-semibold text-muted">Компоненты:</span>
               {["В", "С", "М"].map((letter) => {
                 const active = components.includes(letter);
@@ -589,22 +567,12 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                   </option>
                 ))}
               </select>
-
-              <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
-                <input
-                  type="checkbox"
-                  checked={concentration}
-                  onChange={(event) => setConcentration(event.target.checked)}
-                  className="h-3.5 w-3.5 accent-[#28624A]"
-                />
-                Концентрация
-              </label>
             </div>
           ) : null}
         </div>
       </div>
 
-      <main className="mx-auto max-w-[1440px] px-4 pb-28 pt-5 sm:px-5">
+      <main className="mx-auto max-w-[1440px] px-4 pb-44 pt-5 sm:px-5">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-[12px] font-semibold text-muted">
             {loading && !spells.length ? "Загружаем заклинания…" : `${filtered.length} карточек в ${groups.length} ${groups.length === 1 ? "круге" : "кругах"}`}
@@ -655,7 +623,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                     onClick={() => selection.addMany(list.map((spell) => spell.id))}
                     className="inline-flex h-7 items-center gap-1 rounded-lg border border-line-strong bg-white px-2 text-[11px] font-semibold text-ink-soft transition-colors hover:border-ink/25 hover:text-ink"
                   >
-                    <Plus className="h-3 w-3" /> весь круг
+                    <Plus className="h-3 w-3" /> печать
                   </button>
                 </div>
                 <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -682,8 +650,6 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
           </div>
         ) : null}
       </main>
-
-      <ArtOverrides />
 
       <SelectionBar />
       <SpellDialog

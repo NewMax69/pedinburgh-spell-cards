@@ -20,7 +20,7 @@ import {
 import { getCardLayout } from "./card-layout";
 import { DIGIT_PATHS, RITUAL_PATH } from "./digit-paths";
 import { dataUrlToBytes, resolveArtSrc } from "./art-src";
-import { getFramePng } from "./frame-png";
+import { getFramePng, clipArtPng } from "./frame-png";
 import { fontsReady } from "./measure";
 import { getUnits } from "./client-store";
 import { convertRange } from "./units";
@@ -186,7 +186,7 @@ async function drawCard(
   });
 
   const artSrc = await resolveArtSrc(spell);
-  const art = await embedImage(doc, artSrc, images);
+  const art = await embedImage(doc, await clipArtPng(artSrc), images);
   if (art) {
     page.drawImage(art, {
       x: frameX + 3,
@@ -238,7 +238,7 @@ async function drawCard(
   });
   const levelGlyph = DIGIT_PATHS[String(spell.level)] ?? DIGIT_PATHS["0"];
   page.drawSvgPath(levelGlyph.d, {
-    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 0.4 : 0),
+    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 0.26 : 0),
     y: yTop - BADGE.y - BADGE.h / 2,
     color: ink,
   });

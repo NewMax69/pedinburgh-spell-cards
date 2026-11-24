@@ -276,7 +276,7 @@ export default function PrintPage() {
                             if (event.key === "Enter") (event.target as HTMLInputElement).blur();
                           }}
                           aria-label="Порядковый номер"
-                          className="h-6 w-9 shrink-0 rounded border border-line bg-white text-center font-mono text-[10.5px] outline-none focus:border-accent"
+                          className="h-6 w-9 shrink-0 rounded border border-line bg-white text-center font-mono text-[10.5px] outline-none focus:border-accent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[12px] font-semibold">{spell.name}</span>

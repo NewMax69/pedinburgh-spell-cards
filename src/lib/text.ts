@@ -161,7 +161,7 @@ export function parseBody(text: string): ParsedBody {
   const paragraphs = (text ?? "")
     .replace(/\r\n/g, "\n")
     .split(/\n+/)
-    .map((p) => p.replace(/\s+/g, " ").trim())
+    .map((p) => p.trim())
     .filter((p) => p && p !== "—" && p !== "-");
 
   if (paragraphs.length === 0) return { art: "", body: [], upgrade: "" };

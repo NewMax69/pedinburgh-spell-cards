@@ -1,0 +1,116 @@
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-muted">Классы:</span>
+            {options.classes.map((name) => {
+              const active = classFilter.includes(name);
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() =>
+                    setClassFilter((prev) =>
+                      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+                    )
+                  }
+                  aria-pressed={active}
+                  className={cn(
+                    "inline-flex h-7 shrink-0 items-center rounded-full border px-2.5 text-[11.5px] font-semibold transition-colors",
+                    active
+                      ? "border-accent bg-accent-soft text-accent-deep"
+                      : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
+                  )}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
+              <input
+                type="checkbox"
+                checked={adaptedOnly}
+                onChange={(event) => {
+                  setAdaptedOnly(event.target.checked);
+                  if (event.target.checked) setRawOnly(false);
+                }}
+                className="h-3.5 w-3.5 accent-[#28624A]"
+              />
+              адаптированные
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
+              <input
+                type="checkbox"
+                checked={rawOnly}
+                onChange={(event) => {
+                  setRawOnly(event.target.checked);
+                  if (event.target.checked) setAdaptedOnly(false);
+                }}
+                className="h-3.5 w-3.5 accent-[#28624A]"
+              />
+              не адаптированные
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((value) => !value)}
+              aria-expanded={advancedOpen}
+              className={cn(
+                "inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[11.5px] font-semibold transition-colors",
+                advancedOpen
+                  ? "border-accent bg-accent-soft text-accent-deep"
+                  : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
+              )}
+            >
+              <SlidersHorizontal className="h-3 w-3" /> Ещё фильтры
+            </button>
+
+            <div className="ml-auto flex items-center gap-2">
+              <div className="relative" ref={bulkRef}>
+                <button
+                  type="button"
+                  onClick={() => setBulkOpen((value) => !value)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line-strong bg-white px-2.5 text-[11.5px] font-semibold text-ink-soft transition-colors hover:border-ink/25 hover:text-ink"
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  Наборы для печати
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+                {bulkOpen ? (
+                  <div className="absolute right-0 top-9 z-40 w-[280px] overflow-hidden rounded-xl border border-line bg-white p-1 shadow-lift">
+                    {[
+                      ["Текущие фильтры", filtered],
+                      ["Адаптированные", adapted],
+                      ["Неадаптированные", all.filter((spell) => !adapted.includes(spell))],
+                      ["Ритуалы", rituals],
+                      ["Все карточки", all],
+                    ].map(([label, list]) => (
+                      <button
+                        key={label as string}
+                        type="button"
+                        onClick={() => bulkAdd(list as Spell[])}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper"
+                      >
+                        {label as string}
+                        <span className="text-[11px] text-muted">{(list as Spell[]).length}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5 text-muted" />
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as SortKey)}
+                  className="h-8 rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
+                >
+                  <option value="level">По кругу</option>
+                  <option value="school">По школе</option>
+                </select>
+              </div>
+            </div>
+          </div>

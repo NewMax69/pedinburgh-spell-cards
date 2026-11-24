@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Layers, Plus } from "lucide-react";
-import { useSelection } from "@/lib/client-store";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const NAV = [
@@ -19,7 +18,6 @@ function isActive(pathname: string, href: string) {
 
 export function AppHeader() {
   const pathname = usePathname();
-  const { count } = useSelection();
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/80 bg-paper/85 backdrop-blur-xl">
@@ -58,18 +56,6 @@ export function AppHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-line-strong bg-white/70 pl-2.5 pr-3 text-[12.5px] font-semibold text-ink-soft">
-            <Layers className="h-4 w-4" />
-            <span className="hidden sm:inline">Набор</span>
-            <span
-              className={cn(
-                "grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] font-bold transition-colors",
-                count > 0 ? "bg-accent text-white" : "bg-ink/8 text-muted"
-              )}
-            >
-              {count}
-            </span>
-          </span>
           <Link
             href="/editor"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[12.5px] font-semibold text-white transition-colors hover:bg-accent-deep"

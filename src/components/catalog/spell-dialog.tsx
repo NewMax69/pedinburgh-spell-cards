@@ -28,6 +28,8 @@ export function SpellDialog({
   artOverridden?: boolean;
   onResetArt?: () => void;
 }) {
+  const { units } = useUnits();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
@@ -44,7 +46,6 @@ export function SpellDialog({
 
   if (!open || !spell) return null;
 
-  const { units } = useUnits();
   const school = normalizeSchool(spell.school);
   const meta = school ? SCHOOL_META[school] : null;
   const paragraphs = [spell.art, ...spell.body, spell.upgrade].filter(Boolean);
