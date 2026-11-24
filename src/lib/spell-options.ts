@@ -46,13 +46,7 @@ export const DURATION_OPTIONS = [
   "Кон. до 24 ч.",
 ];
 
-export const KEYWORDS = [
-  "Спасбросок: ",
-  "При попадании: ",
-  "При касании: ",
-  "Увеличение: ",
-  "Уменьшение: ",
-];
+export const KEYWORDS = ["Спасбросок: ", "При попадании: "];
 
 export const UPGRADE_KEYWORDS = ["Улучшение: "];
 

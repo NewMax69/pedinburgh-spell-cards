@@ -53,6 +53,7 @@ function keyFor(spell: Spell, options: RenderOptions): string {
       options.showArt === false ? 0 : 1,
       options.showUpgrade === false ? 0 : 1,
       options.showComponents === false ? 0 : 1,
+      options.artInHeader ? 1 : 0,
     ].join("\u0000")
   );
 }
@@ -81,22 +82,25 @@ export function getCardLayout(spell: Spell, options: RenderOptions = {}): CardLa
     COMPONENTS_TYPE.base,
     TITLE.maxH - title.height - TITLE_COMPONENTS_GAP
   );
-  const components = options.showComponents === false
+  const components = options.showComponents === false && !options.artInHeader
     ? layoutParagraphs([], { width: TITLE.w, maxHeight: 1, base: 9, min: 9, lineRatio: 1.111, gapRatio: 0 })
-    : layoutParagraphs(["Компоненты:", spell.components || "—"], {
-        width: TITLE.w,
-        maxHeight: componentsHeight,
-        base: COMPONENTS_TYPE.base,
-        min: COMPONENTS_TYPE.min,
-        lineRatio: COMPONENTS_TYPE.lineRatio,
-        gapRatio: 0,
-        maxLines: COMPONENTS_TYPE.maxLines,
-        italic: false,
-        labels: false,
-      });
+    : layoutParagraphs(
+        options.artInHeader ? [spell.art || "—"] : ["Компоненты:", spell.components || "—"],
+        {
+          width: TITLE.w,
+          maxHeight: componentsHeight,
+          base: COMPONENTS_TYPE.base,
+          min: COMPONENTS_TYPE.min,
+          lineRatio: COMPONENTS_TYPE.lineRatio,
+          gapRatio: 0,
+          maxLines: COMPONENTS_TYPE.maxLines,
+          italic: Boolean(options.artInHeader),
+          labels: false,
+        }
+      );
 
   const paragraphs: string[] = [];
-  if (options.showArt !== false && spell.art) paragraphs.push(spell.art);
+  if (!options.artInHeader && options.showArt !== false && spell.art) paragraphs.push(spell.art);
   if (spell.body.length) paragraphs.push(...spell.body);
   if (options.showUpgrade !== false && spell.upgrade) paragraphs.push(spell.upgrade);
   if (paragraphs.length === 0) paragraphs.push("Описание пока не заполнено.");

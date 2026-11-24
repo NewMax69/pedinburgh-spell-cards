@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Spell } from "./types";
+import type { Units } from "./units";
 
 const KEYS = {
   spells: "pedinburgh:spells",
@@ -9,6 +10,7 @@ const KEYS = {
   custom: "pedinburgh:customCards",
   drive: "pedinburgh:driveFolder",
   driveImages: "pedinburgh:driveImages",
+  units: "pedinburgh:units",
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -291,7 +293,18 @@ export function useDriveImages() {
 
   const clear = useCallback(() => replace({}), [replace]);
 
-  return { map, replace, clear };
+  const remove = useCallback(
+    (id: string) => {
+      const current = ensureDrive();
+      if (!(id in current)) return;
+      const next = { ...current };
+      delete next[id];
+      replace(next);
+    },
+    [replace]
+  );
+
+  return { map, replace, clear, remove };
 }
 
 export function applyDriveImages(spells: Spell[], map: Record<string, string>): Spell[] {
@@ -330,6 +343,38 @@ export function emptySpell(level = 1): Spell {
 
 export function levelText(level: number): string {
   return level === 0 ? "Заговор" : `${level} круг`;
+}
+
+/* --------------------------------- units --------------------------------- */
+
+let unitsState: Units | null = null;
+const unitsListeners = new Set<() => void>();
+
+function ensureUnits(): Units {
+  if (!unitsState) unitsState = read<Units>(KEYS.units, "m");
+  return unitsState;
+}
+
+function subscribeUnits(callback: () => void) {
+  unitsListeners.add(callback);
+  return () => {
+    unitsListeners.delete(callback);
+  };
+}
+
+export function useUnits() {
+  const units = useSyncExternalStore(subscribeUnits, ensureUnits, () => "m" as Units);
+  const setUnits = useCallback((next: Units) => {
+    unitsState = next;
+    write(KEYS.units, next);
+    unitsListeners.forEach((listener) => listener());
+  }, []);
+  return { units, setUnits };
+}
+
+export function getUnits(): Units {
+  if (typeof window === "undefined") return "m";
+  return ensureUnits();
 }
 
 export { KEYS as STORAGE_KEYS };

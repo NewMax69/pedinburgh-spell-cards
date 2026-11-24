@@ -97,8 +97,8 @@ export function isRitual(row: SpellRow): boolean {
 
 export function cleanName(raw: string): string {
   return (raw ?? "")
+    .split("/")[0]
     .replace(/\s+/g, " ")
-    .replace(/\s*\/\s*/g, " / ")
     .replace(/[?\uFFFD]+$/g, "")
     .trim();
 }

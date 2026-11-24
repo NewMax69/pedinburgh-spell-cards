@@ -30,6 +30,8 @@ export interface Spell {
   showArt?: boolean;
   showUpgrade?: boolean;
   showComponents?: boolean;
+  /** Вместо строки компонентов под названием — художественное описание */
+  artInHeader?: boolean;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -43,7 +45,7 @@ export interface CardTheme {
 
 export const DEFAULT_THEME: CardTheme = {
   header: "#B9F3B7",
-  accent: "#8FD48C",
+  accent: "#B9F3B7",
   ink: "#141313",
   paper: "#FFFFFF",
 };
@@ -70,6 +72,7 @@ export interface RenderOptions {
   showUpgrade?: boolean;
   showArt?: boolean;
   showComponents?: boolean;
+  artInHeader?: boolean;
   showSchool?: boolean;
   showBadge?: boolean;
 }

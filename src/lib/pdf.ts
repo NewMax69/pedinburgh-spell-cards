@@ -22,6 +22,8 @@ import { getCardLayout } from "./card-layout";
 import { DIGIT_PATHS, RITUAL_PATH } from "./digit-paths";
 import { dataUrlToBytes, resolveArtSrc } from "./art-src";
 import { fontsReady } from "./measure";
+import { getUnits } from "./client-store";
+import { convertRange } from "./units";
 import { DEFAULT_THEME, type Spell } from "./types";
 
 const FONT_FILES = {
@@ -146,7 +148,14 @@ async function drawCard(
   fonts: FontPack,
   images: Map<string, PDFImage | null>
 ) {
-  const layout = getCardLayout(spell);
+  const units = getUnits();
+  const display = units === "ft" ? { ...spell, range: convertRange(spell.range, units) } : spell;
+  const layout = getCardLayout(display, {
+    showArt: spell.showArt,
+    showUpgrade: spell.showUpgrade,
+    showComponents: spell.showComponents,
+    artInHeader: spell.artInHeader,
+  });
   const theme = { ...DEFAULT_THEME, ...(spell.theme ?? {}) };
   const H = page.getHeight();
   const yTop = H - top;
@@ -239,7 +248,7 @@ async function drawCard(
   });
   const levelGlyph = DIGIT_PATHS[String(spell.level)] ?? DIGIT_PATHS["0"];
   page.drawSvgPath(levelGlyph.d, {
-    x: x + BADGE.x + BADGE.w / 2,
+    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 0.4 : 0),
     y: yTop - BADGE.y - BADGE.h / 2,
     color: ink,
   });

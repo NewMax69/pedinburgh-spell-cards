@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CheckCheck,
   ChevronDown,
   Layers,
   Plus,
@@ -14,18 +13,21 @@ import {
   X,
 } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
+import { ArtOverrides } from "@/components/catalog/art-overrides";
 import { CardTile } from "@/components/catalog/card-tile";
 import { SelectionBar } from "@/components/catalog/selection-bar";
 import { SpellDialog } from "@/components/catalog/spell-dialog";
 import { Button } from "@/components/ui/button";
 import {
   applyDriveImages,
+  normalizeKey,
   useCustomCards,
   useDriveImages,
   useSelection,
   useSpells,
 } from "@/lib/client-store";
 import { SCHOOLS, SCHOOL_META } from "@/lib/schools";
+import { STANDARD_ART } from "@/lib/standard-art";
 import { cn } from "@/lib/cn";
 import type { Spell } from "@/lib/types";
 
@@ -41,7 +43,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
   const router = useRouter();
   const { spells, loading, error, refresh, source } = useSpells(initialSpells);
   const { cards: customCards, upsert } = useCustomCards();
-  const { map: driveMap } = useDriveImages();
+  const { map: driveMap, remove: removeDriveImage } = useDriveImages();
   const selection = useSelection();
 
   const [levels, setLevels] = useState<number[]>([]);
@@ -49,15 +51,30 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
   const [ritualOnly, setRitualOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("level");
-  const [onlyEdited, setOnlyEdited] = useState(false);
+  const [adaptation, setAdaptation] = useState<"all" | "edited" | "raw">("all");
+  const [components, setComponents] = useState<string[]>([]);
+  const [casting, setCasting] = useState("");
+  const [range, setRange] = useState("");
+  const [duration, setDuration] = useState("");
+  const [concentration, setConcentration] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [detail, setDetail] = useState<Spell | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLDivElement>(null);
 
+  const standardById = useMemo(() => {
+    const byKey = new Map<string, string>();
+    for (const spell of spells) {
+      const url = STANDARD_ART[normalizeKey(spell.name)];
+      if (url) byKey.set(spell.id, url);
+    }
+    return Object.fromEntries(byKey);
+  }, [spells]);
+
   const all = useMemo(
-    () => [...customCards, ...applyDriveImages(spells, driveMap)],
-    [customCards, spells, driveMap]
+    () => [...customCards, ...applyDriveImages(spells, { ...standardById, ...driveMap })],
+    [customCards, spells, driveMap, standardById]
   );
 
   const counts = useMemo(() => {
@@ -70,6 +87,28 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
     () => all.filter((spell) => spell.custom || spell.status === "edited"),
     [all]
   );
+  const rituals = useMemo(() => all.filter((spell) => spell.ritual), [all]);
+  const bySchools = useMemo(
+    () => (schools.length ? all.filter((spell) => schools.includes(spell.school)) : []),
+    [all, schools]
+  );
+  const byLevels = useMemo(
+    () => (levels.length ? all.filter((spell) => levels.includes(spell.level)) : []),
+    [all, levels]
+  );
+
+  const options = useMemo(() => {
+    const uniq = (values: string[]) =>
+      [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru"));
+    return {
+      casting: uniq(all.map((spell) => spell.casting)),
+      range: uniq(all.map((spell) => spell.range)),
+      duration: uniq(all.map((spell) => spell.duration)),
+    };
+  }, [all]);
+
+  const hasComponent = (text: string, letter: string) =>
+    new RegExp(`(^|[^А-ЯЁ])${letter}([^А-ЯЁ]|$)`).test(text.toUpperCase());
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -77,7 +116,14 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       if (levels.length > 0 && !levels.includes(spell.level)) return false;
       if (schools.length > 0 && !schools.includes(spell.school)) return false;
       if (ritualOnly && !spell.ritual) return false;
-      if (onlyEdited && spell.status !== "edited" && !spell.custom) return false;
+      const isAdapted = Boolean(spell.custom) || spell.status === "edited";
+      if (adaptation === "edited" && !isAdapted) return false;
+      if (adaptation === "raw" && isAdapted) return false;
+      if (components.length && !components.every((letter) => hasComponent(spell.components, letter))) return false;
+      if (casting && spell.casting !== casting) return false;
+      if (range && spell.range !== range) return false;
+      if (duration && spell.duration !== duration) return false;
+      if (concentration && !/конц/i.test(spell.duration)) return false;
       if (!needle) return true;
       return (
         spell.name.toLowerCase().includes(needle) ||
@@ -91,7 +137,7 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
       if (sort === "school") return a.school.localeCompare(b.school, "ru") || a.name.localeCompare(b.name, "ru");
       return a.level - b.level || a.name.localeCompare(b.name, "ru");
     });
-  }, [all, levels, schools, ritualOnly, onlyEdited, query, sort]);
+  }, [all, levels, schools, ritualOnly, adaptation, components, casting, range, duration, concentration, query, sort]);
 
   const groups = useMemo(() => {
     const map = new Map<number, Spell[]>();
@@ -146,14 +192,27 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
   const toggleSchool = (name: string) =>
     setSchools((prev) => (prev.includes(name) ? prev.filter((school) => school !== name) : [...prev, name]));
 
-  const hasFilters = levels.length > 0 || schools.length > 0 || ritualOnly || onlyEdited || query.trim().length > 0;
+  const hasFilters =
+    levels.length > 0 ||
+    schools.length > 0 ||
+    ritualOnly ||
+    adaptation !== "all" ||
+    components.length > 0 ||
+    Boolean(casting || range || duration) ||
+    concentration ||
+    query.trim().length > 0;
 
   const resetFilters = () => {
     setLevels([]);
     setSchools([]);
     setRitualOnly(false);
     setQuery("");
-    setOnlyEdited(false);
+    setAdaptation("all");
+    setComponents([]);
+    setCasting("");
+    setRange("");
+    setDuration("");
+    setConcentration(false);
   };
 
   const bulkAdd = (list: Spell[], close = true) => {
@@ -323,15 +382,30 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
 
             <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
 
-            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
-              <input
-                type="checkbox"
-                checked={onlyEdited}
-                onChange={(event) => setOnlyEdited(event.target.checked)}
-                className="h-3.5 w-3.5 accent-[#28624A]"
-              />
-              <CheckCheck className="h-3.5 w-3.5" /> только адаптированные
-            </label>
+            <select
+              value={adaptation}
+              onChange={(event) => setAdaptation(event.target.value as "all" | "edited" | "raw")}
+              className="h-7 rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
+              aria-label="Адаптация"
+            >
+              <option value="all">Адаптация: все</option>
+              <option value="edited">Адаптированные</option>
+              <option value="raw">Неадаптированные</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((value) => !value)}
+              aria-expanded={advancedOpen}
+              className={cn(
+                "inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[11.5px] font-semibold transition-colors",
+                advancedOpen
+                  ? "border-accent bg-accent-soft text-accent-deep"
+                  : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
+              )}
+            >
+              <SlidersHorizontal className="h-3 w-3" /> Ещё фильтры
+            </button>
 
             <div className="ml-auto flex items-center gap-2">
               <div className="relative" ref={bulkRef}>
@@ -345,29 +419,55 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {bulkOpen ? (
-                  <div className="absolute right-0 top-9 z-40 w-[268px] overflow-hidden rounded-xl border border-line bg-white p-1 shadow-lift">
+                  <div className="absolute right-0 top-9 z-40 w-[300px] overflow-hidden rounded-xl border border-line bg-white p-1 shadow-lift">
+                    <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
+                      Добавить в набор
+                    </p>
+                    {[
+                      ["Всё отфильтрованное", filtered],
+                      ["Все адаптированные", adapted],
+                      ["Все неадаптированные", all.filter((spell) => !adapted.includes(spell))],
+                      ["Все ритуалы", rituals],
+                    ].map(([label, list]) => (
+                      <button
+                        key={label as string}
+                        type="button"
+                        onClick={() => bulkAdd(list as Spell[])}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper"
+                      >
+                        {label as string}
+                        <span className="text-[11px] text-muted">{(list as Spell[]).length}</span>
+                      </button>
+                    ))}
+
+                    <div className="my-1 h-px bg-line/70" />
+                    <p className="px-2.5 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
+                      По выбранным фильтрам
+                    </p>
                     <button
                       type="button"
-                      onClick={() => bulkAdd(filtered)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper"
+                      disabled={!byLevels.length}
+                      onClick={() => bulkAdd(byLevels)}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      По текущим фильтрам
-                      <span className="text-[11px] text-muted">{filtered.length}</span>
+                      {levels.length ? `Выбранные круги (${levels.length})` : "Выберите круги"}
+                      <span className="text-[11px] text-muted">{byLevels.length}</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => bulkAdd(adapted)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper"
+                      disabled={!bySchools.length}
+                      onClick={() => bulkAdd(bySchools)}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Все адаптированные
-                      <span className="text-[11px] text-muted">{adapted.length}</span>
+                      {schools.length ? `Выбранные школы (${schools.length})` : "Выберите школы"}
+                      <span className="text-[11px] text-muted">{bySchools.length}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => bulkAdd(all)}
                       className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold hover:bg-paper"
                     >
-                      Все карточки
+                      Вообще все карточки
                       <span className="text-[11px] text-muted">{all.length}</span>
                     </button>
                   </div>
@@ -388,6 +488,87 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
               </div>
             </div>
           </div>
+
+          {advancedOpen ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2">
+              <span className="text-[11px] font-semibold text-muted">Компоненты:</span>
+              {["В", "С", "М"].map((letter) => {
+                const active = components.includes(letter);
+                return (
+                  <button
+                    key={letter}
+                    type="button"
+                    onClick={() =>
+                      setComponents((prev) =>
+                        prev.includes(letter) ? prev.filter((item) => item !== letter) : [...prev, letter]
+                      )
+                    }
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex h-6 w-7 items-center justify-center rounded-full border text-[11.5px] font-bold",
+                      active
+                        ? "border-accent bg-accent-soft text-accent-deep"
+                        : "border-line bg-white/50 text-ink-soft hover:border-line-strong hover:bg-white"
+                    )}
+                  >
+                    {letter}
+                  </button>
+                );
+              })}
+
+              <select
+                value={casting}
+                onChange={(event) => setCasting(event.target.value)}
+                aria-label="Накладывание"
+                className="h-7 max-w-[220px] rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
+              >
+                <option value="">Накладывание: любое</option>
+                {options.casting.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={range}
+                onChange={(event) => setRange(event.target.value)}
+                aria-label="Дистанция"
+                className="h-7 max-w-[220px] rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
+              >
+                <option value="">Дистанция: любая</option>
+                {options.range.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={duration}
+                onChange={(event) => setDuration(event.target.value)}
+                aria-label="Длительность"
+                className="h-7 max-w-[220px] rounded-lg border border-line bg-white/70 px-2 text-[11.5px] font-semibold outline-none"
+              >
+                <option value="">Длительность: любая</option>
+                {options.duration.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+
+              <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={concentration}
+                  onChange={(event) => setConcentration(event.target.checked)}
+                  className="h-3.5 w-3.5 accent-[#28624A]"
+                />
+                Концентрация
+              </label>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -470,6 +651,8 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
         ) : null}
       </main>
 
+      <ArtOverrides />
+
       <SelectionBar />
       <SpellDialog
         spell={detail}
@@ -478,6 +661,10 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
         onClose={() => setDetail(null)}
         onToggle={selection.toggle}
         onEdit={openEditor}
+        artOverridden={detail ? Boolean(driveMap[detail.id]) : false}
+        onResetArt={() => {
+          if (detail) removeDriveImage(detail.id);
+        }}
       />
     </div>
   );

@@ -23,6 +23,7 @@ exports/
 # тяжёлые выгрузки таблицы — в репозитории только снимок
 data/*.json
 !data/spells.json
+!data/standard-art.json
 
 # локальные выгрузки Google Таблицы
 sheet0.csv

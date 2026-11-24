@@ -5,7 +5,8 @@ import { Check, ExternalLink, Pencil, Plus, X } from "lucide-react";
 import { FixedCard } from "@/components/card/scaled-card";
 import { Button } from "@/components/ui/button";
 import { SCHOOL_META, normalizeSchool } from "@/lib/schools";
-import { levelText } from "@/lib/client-store";
+import { levelText, useUnits } from "@/lib/client-store";
+import { convertRange } from "@/lib/units";
 import type { Spell } from "@/lib/types";
 
 export function SpellDialog({
@@ -15,6 +16,8 @@ export function SpellDialog({
   onClose,
   onToggle,
   onEdit,
+  artOverridden,
+  onResetArt,
 }: {
   spell: Spell | null;
   open: boolean;
@@ -22,6 +25,8 @@ export function SpellDialog({
   onClose: () => void;
   onToggle: (id: string) => void;
   onEdit?: (spell: Spell) => void;
+  artOverridden?: boolean;
+  onResetArt?: () => void;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -39,6 +44,7 @@ export function SpellDialog({
 
   if (!open || !spell) return null;
 
+  const { units } = useUnits();
   const school = normalizeSchool(spell.school);
   const meta = school ? SCHOOL_META[school] : null;
   const paragraphs = [spell.art, ...spell.body, spell.upgrade].filter(Boolean);
@@ -101,6 +107,15 @@ export function SpellDialog({
                   <Pencil className="h-4 w-4" /> Своя версия
                 </Button>
               ) : null}
+              {artOverridden && onResetArt ? (
+                <button
+                  type="button"
+                  onClick={onResetArt}
+                  className="text-[11.5px] font-semibold text-muted hover:text-danger"
+                >
+                  Вернуть стандартную иллюстрацию
+                </button>
+              ) : null}
               {spell.source ? (
                 <a
                   href={spell.source}
@@ -118,7 +133,7 @@ export function SpellDialog({
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-b border-line pb-4 text-[12.5px]">
               {[
                 ["Накладывание", spell.casting],
-                ["Дистанция", spell.range],
+                ["Дистанция", convertRange(spell.range, units)],
                 ["Длительность", spell.duration],
                 ["Компоненты", spell.components],
               ].map(([label, value]) => (
@@ -129,32 +144,12 @@ export function SpellDialog({
               ))}
             </dl>
 
-            <div className="mt-4 space-y-3 font-display text-[15px] leading-[1.45] text-ink-soft">
-              {paragraphs.map((text, index) => (
-                <p key={index} className={index === 0 ? "text-[16px] italic text-ink" : undefined}>
-                  {text}
-                </p>
-              ))}
-            </div>
-
-            <p className="mt-5 border-t border-line pt-3 text-[11px] text-muted">
-              {spell.custom
-                ? "Своя карточка · хранится в браузере"
-                : spell.status === "edited"
-                  ? "Авторское описание из базы Пединбурга"
-                  : "Черновик: описание ещё не адаптировано"}
+            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
+              Официальное описание
             </p>
-
-            {spell.official && spell.status === "edited" ? (
-              <details open className="mt-3 rounded-xl border border-line bg-white/60 px-3 py-2.5">
-                <summary className="cursor-pointer select-none text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted">
-                  Официальное описание
-                </summary>
-                <p className="mt-2 whitespace-pre-line font-display text-[14px] leading-[1.45] text-ink-soft">
-                  {spell.official}
-                </p>
-              </details>
-            ) : null}
+            <div className="mt-2 whitespace-pre-line font-display text-[15px] leading-[1.45] text-ink-soft">
+              {spell.official || paragraphs.join("\n\n")}
+            </div>
           </div>
         </div>
       </div>

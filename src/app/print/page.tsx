@@ -106,19 +106,8 @@ export default function PrintPage() {
           </div>
           {selected.length > 0 ? (
             <div className="flex items-center gap-2">
-              {pdfUrl ? (
-                <a href={pdfUrl} target="_blank" rel="noreferrer">
-                  <Button variant="secondary">
-                    <ExternalLink className="h-4 w-4" /> Открыть PDF
-                  </Button>
-                </a>
-              ) : null}
               <Button variant="secondary" onClick={clear}>
                 <Trash2 className="h-4 w-4" /> Очистить
-              </Button>
-              <Button onClick={onDownload} disabled={exporting}>
-                <Download className="h-4 w-4" />
-                {exporting ? `Собираем ${progress.done}/${progress.total}…` : "Скачать PDF"}
               </Button>
             </div>
           ) : null}
@@ -132,19 +121,9 @@ export default function PrintPage() {
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-bold text-accent-deep">PDF готов</p>
               <p className="text-[11px] text-accent-deep/70">
-                {totalPages} {plural(totalPages, "лист", "листа", "листов")} · откройте в браузере или скачайте файл
+                {totalPages} {plural(totalPages, "лист", "листа", "листов")} · кнопки ниже
               </p>
             </div>
-            <a href={pdfUrl} target="_blank" rel="noreferrer">
-              <Button variant="secondary" size="sm">
-                <ExternalLink className="h-3.5 w-3.5" /> Открыть
-              </Button>
-            </a>
-            <a href={pdfUrl} download={`pedinburgh-spells-${selected.length}.pdf`}>
-              <Button size="sm">
-                <Download className="h-3.5 w-3.5" /> Скачать файл
-              </Button>
-            </a>
           </div>
         ) : null}
 
@@ -232,9 +211,14 @@ export default function PrintPage() {
                   </div>
                 ) : null}
                 {pdfUrl ? (
-                  <p className="mt-2 text-center text-[10.5px] leading-snug text-muted">
-                    Если скачивание не началось — нажмите «Открыть» или «Скачать файл» выше.
-                  </p>
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 flex items-center justify-center gap-1 text-[11.5px] font-semibold text-accent hover:underline"
+                  >
+                    Открыть PDF <ExternalLink className="h-3 w-3" />
+                  </a>
                 ) : (
                   <p className="mt-2 text-center text-[10.5px] leading-snug text-muted">
                     PDF с векторным текстом и иллюстрациями, готов к печати без полей.
@@ -274,7 +258,26 @@ export default function PrintPage() {
                         className="group flex cursor-grab items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-paper active:cursor-grabbing"
                       >
                         <GripVertical className="h-3.5 w-3.5 shrink-0 text-line-strong" />
-                        <span className="w-5 shrink-0 text-right font-mono text-[10px] text-muted">{index + 1}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={count}
+                          key={`${spell.id}-${index}`}
+                          defaultValue={index + 1}
+                          onBlur={(event) => {
+                            const target = Number(event.target.value);
+                            if (Number.isFinite(target) && target >= 1 && target <= count) {
+                              reorder(index, target - 1);
+                            } else {
+                              event.target.value = String(index + 1);
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") (event.target as HTMLInputElement).blur();
+                          }}
+                          aria-label="Порядковый номер"
+                          className="h-6 w-9 shrink-0 rounded border border-line bg-white text-center font-mono text-[10.5px] outline-none focus:border-accent"
+                        />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[12px] font-semibold">{spell.name}</span>
                           <span className="block truncate text-[10px] text-muted">

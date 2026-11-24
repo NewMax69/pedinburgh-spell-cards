@@ -23,12 +23,8 @@ export function SelectionBar({ hidden = false }: { hidden?: boolean }) {
         <span className="grid h-9 w-9 place-items-center rounded-xl bg-card text-[14px] font-bold text-ink">
           {count}
         </span>
-        <span className="px-1 text-[12.5px] font-semibold">
-          {count} {plural(count, "карточка", "карточки", "карточек")}
-          <span className="mx-1.5 text-paper/30">·</span>
-          <span className="text-paper/70">
-            {pages} {plural(pages, "лист", "листа", "листов")} A4
-          </span>
+        <span className="px-1 text-[12.5px] font-semibold text-paper/70">
+          {pages} {plural(pages, "лист", "листа", "листов")} A4
         </span>
         <button
           type="button"

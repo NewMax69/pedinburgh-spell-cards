@@ -21,6 +21,8 @@ import { fontsReady, isFontsReady } from "@/lib/measure";
 import { DEFAULT_THEME, type RenderOptions, type Spell } from "@/lib/types";
 import { placeholderArt } from "@/lib/art";
 import { getImage } from "@/lib/idb";
+import { useUnits } from "@/lib/client-store";
+import { convertRange } from "@/lib/units";
 import { normalizeSchool } from "@/lib/schools";
 import { cn } from "@/lib/cn";
 
@@ -130,9 +132,13 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
     showArt: options.showArt ?? spell.showArt,
     showUpgrade: options.showUpgrade ?? spell.showUpgrade,
     showComponents: options.showComponents ?? spell.showComponents,
+    artInHeader: options.artInHeader ?? spell.artInHeader,
   };
-  const layout = ready ? getCardLayout(spell, effective) : null;
   const art = useSpellArt(spell);
+  const { units } = useUnits();
+  const display =
+    units === "ft" ? { ...spell, range: convertRange(spell.range, units) } : spell;
+  const layout = ready ? getCardLayout(display, effective) : null;
 
   const theme = { ...DEFAULT_THEME, ...(spell.theme ?? {}), ...(options.theme ?? {}) };
 
@@ -270,7 +276,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
               fill={theme.paper}
               transform="translate(9 10.5) scale(0.8889 0.9048) translate(-9 -10.5)"
             />
-            <g transform="translate(9 10.5)">
+            <g transform={`translate(${9 + (String(spell.level) === "1" ? -0.4 : 0)} 10.5)`}>
               <path d={DIGIT_PATHS[String(spell.level)]?.d ?? DIGIT_PATHS["0"].d} fill={theme.ink} />
             </g>
           </svg>
@@ -288,7 +294,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
             }}
           >
             <TextLines layout={layout.title} x={0} y={0} weight={700} />
-            {effective.showComponents !== false && (
+            {(effective.showComponents !== false || effective.artInHeader) && (
               <TextLines layout={layout.components} x={0} y={layout.componentsTop} />
             )}
           </div>

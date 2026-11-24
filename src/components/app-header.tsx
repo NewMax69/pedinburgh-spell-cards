@@ -58,10 +58,7 @@ export function AppHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/print"
-            className="relative inline-flex h-9 items-center gap-2 rounded-lg border border-line-strong bg-white/70 pl-2.5 pr-3 text-[12.5px] font-semibold text-ink-soft transition-colors hover:border-ink/25 hover:text-ink"
-          >
+          <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-line-strong bg-white/70 pl-2.5 pr-3 text-[12.5px] font-semibold text-ink-soft">
             <Layers className="h-4 w-4" />
             <span className="hidden sm:inline">Набор</span>
             <span
@@ -72,7 +69,7 @@ export function AppHeader() {
             >
               {count}
             </span>
-          </Link>
+          </span>
           <Link
             href="/editor"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[12.5px] font-semibold text-white transition-colors hover:bg-accent-deep"

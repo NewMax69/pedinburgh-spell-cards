@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Check,
   Download,
+  ImageDown,
   ImagePlus,
   Layers,
   Loader2,
@@ -17,10 +18,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
-import { FixedCard } from "@/components/card/scaled-card";
+import { ScaledCard } from "@/components/card/scaled-card";
+import { SpellCard } from "@/components/card/spell-card";
+import { saveCardPng } from "@/lib/png";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/chip";
-import { emptySpell, useCustomCards, useSelection } from "@/lib/client-store";
+import { emptySpell, useCustomCards, useSelection, useUnits } from "@/lib/client-store";
+import { toFeet, toMeters } from "@/lib/units";
 import { SCHOOLS } from "@/lib/schools";
 import { DEFAULT_THEME, type CardTheme, type Spell } from "@/lib/types";
 import { getCardLayout } from "@/lib/card-layout";
@@ -60,8 +64,7 @@ const THEMES: { name: string; theme: CardTheme }[] = [
 const splitBody = (value: string) =>
   value
     .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+    .filter((paragraph) => paragraph.trim() !== "");
 
 function TextTools({
   inputRef,
@@ -140,6 +143,7 @@ export default function EditorPage() {
   const router = useRouter();
   const { cards, upsert, remove } = useCustomCards();
   const selection = useSelection();
+  const { units, setUnits } = useUnits();
 
   const [draft, setDraft] = useState<Spell | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -149,6 +153,21 @@ export default function EditorPage() {
   const artRef = useRef<HTMLTextAreaElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const upgradeRef = useRef<HTMLTextAreaElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  const onSavePng = async () => {
+    const node = exportRef.current?.querySelector<HTMLElement>(".spell-card");
+    if (!node || !draft) return;
+    setBusy(true);
+    try {
+      await saveCardPng(node, draft.name);
+      toast.success("PNG сохранён");
+    } catch (error) {
+      toast.error(`Не удалось сохранить PNG: ${(error as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (draft) return;
@@ -193,6 +212,7 @@ export default function EditorPage() {
         showArt: draft.showArt,
         showUpgrade: draft.showUpgrade,
         showComponents: draft.showComponents,
+        artInHeader: draft.artInHeader,
       });
       setOverflow(layout.overflow);
     });
@@ -315,6 +335,9 @@ export default function EditorPage() {
             <Button variant="secondary" onClick={onDownloadOne} disabled={busy}>
               <Download className="h-4 w-4" /> PDF
             </Button>
+            <Button variant="secondary" onClick={onSavePng} disabled={busy}>
+              <ImageDown className="h-4 w-4" /> PNG
+            </Button>
             <Button variant="secondary" onClick={() => save()}>
               <Save className="h-4 w-4" /> Сохранить
             </Button>
@@ -330,7 +353,7 @@ export default function EditorPage() {
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">Основное</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="sm:col-span-2">
-                  <Label hint="как на карточке">Название</Label>
+                  <Label>Название</Label>
                   <input
                     className={FIELD}
                     value={draft.name}
@@ -399,7 +422,22 @@ export default function EditorPage() {
                   </select>
                 </label>
                 <label>
-                  <Label>Дистанция</Label>
+                  <span className="flex items-center justify-between">
+                    <Label>Дистанция</Label>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        if (!draft) return;
+                        const next = units === "m" ? "ft" : "m";
+                        setUnits(next);
+                        update({ range: next === "ft" ? toFeet(draft.range) : toMeters(draft.range) });
+                      }}
+                      className="mb-1 text-[10.5px] font-bold text-accent hover:underline"
+                    >
+                      {units === "m" ? "метры" : "футы"}
+                    </button>
+                  </span>
                   <select
                     className={FIELD}
                     value={draft.range}
@@ -477,7 +515,7 @@ export default function EditorPage() {
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">Текст</p>
               <div className="space-y-4">
                 <div>
-                  <Label hint="первый абзац, курсив">Художественное описание</Label>
+                  <Label>Художественное описание</Label>
                   <TextTools
                     inputRef={artRef}
                     value={text.art}
@@ -491,9 +529,7 @@ export default function EditorPage() {
                   />
                 </div>
                 <div>
-                  <Label hint="абзацы через пустую строку · **жирный** и *курсив*">
-                    Описание механик
-                  </Label>
+                  <Label>Описание механик</Label>
                   <TextTools
                     inputRef={bodyRef}
                     value={text.body}
@@ -600,11 +636,10 @@ export default function EditorPage() {
                 ))}
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {(
                   [
                     ["Шапка", "header"],
-                    ["Акцент", "accent"],
                     ["Бумага", "paper"],
                     ["Текст", "ink"],
                   ] as const
@@ -613,17 +648,50 @@ export default function EditorPage() {
                     <input
                       type="color"
                       value={theme[key]}
-                      onChange={(event) =>
-                        update({ theme: { ...theme, [key]: event.target.value } as CardTheme })
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const follows = theme.accent.toLowerCase() === theme.header.toLowerCase();
+                        update({
+                          theme: {
+                            ...theme,
+                            [key]: value,
+                            ...(key === "header" && follows ? { accent: value } : {}),
+                          } as CardTheme,
+                        });
+                      }}
                       className="h-8 w-9 cursor-pointer rounded border border-line bg-white p-0.5"
                     />
                     <span className="text-[11.5px] font-semibold text-ink-soft">{label}</span>
                   </label>
                 ))}
+                {theme.accent.toLowerCase() !== theme.header.toLowerCase() ? (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={theme.accent}
+                      onChange={(event) =>
+                        update({ theme: { ...theme, accent: event.target.value } as CardTheme })
+                      }
+                      className="h-8 w-9 cursor-pointer rounded border border-line bg-white p-0.5"
+                    />
+                    <span className="text-[11.5px] font-semibold text-ink-soft">Акцент</span>
+                  </label>
+                ) : null}
               </div>
 
               <div className="mt-3 divide-y divide-line/60">
+                <Switch
+                  checked={theme.accent.toLowerCase() === theme.header.toLowerCase()}
+                  onChange={(value) =>
+                    update({
+                      theme: value
+                        ? ({ ...theme, accent: theme.header } as CardTheme)
+                        : ({ ...theme, accent: "#8FD48C" } as CardTheme),
+                    })
+                  }
+                  label="Акцент как у шапки"
+                  hint="Выключите, чтобы задать отдельный цвет"
+                />
                 <Switch
                   checked={draft.showArt !== false}
                   onChange={(value) => update({ showArt: value })}
@@ -638,6 +706,11 @@ export default function EditorPage() {
                   checked={draft.showComponents !== false}
                   onChange={(value) => update({ showComponents: value })}
                   label="Строка компонентов"
+                />
+                <Switch
+                  checked={!!draft.artInHeader}
+                  onChange={(value) => update({ artInHeader: value })}
+                  label="Вместо компонентов — художественное описание"
                 />
               </div>
             </section>
@@ -656,8 +729,8 @@ export default function EditorPage() {
                   {overflow ? "текст обрезан" : "помещается"}
                 </span>
               </div>
-              <div className="flex justify-center">
-                <FixedCard spell={draft} scale={1.35} className="shadow-lift" />
+              <div className="mx-auto w-full max-w-[324px]">
+                <ScaledCard spell={draft} className="shadow-lift" />
               </div>
               <p className="mt-3 text-center text-[10.5px] text-muted">
                 63,5 × 88,9 мм · кегль подбирается автоматически
@@ -674,6 +747,15 @@ export default function EditorPage() {
             </div>
           </aside>
         </div>
+      {draft ? (
+        <div
+          ref={exportRef}
+          aria-hidden
+          style={{ position: "fixed", left: "-10000px", top: 0, pointerEvents: "none" }}
+        >
+          <SpellCard spell={draft} />
+        </div>
+      ) : null}
       </main>
     </div>
   );
