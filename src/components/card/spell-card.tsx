@@ -213,10 +213,6 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
           />
         )}
         <svg viewBox="0 0 60 60" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-          <rect x="3" y="3" width="4" height="4" fill={theme.ink} />
-          <rect x="53" y="3" width="4" height="4" fill={theme.ink} />
-          <rect x="3" y="53" width="4" height="4" fill={theme.ink} />
-          <rect x="53" y="53" width="4" height="4" fill={theme.ink} />
           <path
             d={FRAME_LAYERS.outerStroke}
             fill="none"
@@ -280,7 +276,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
               fill={theme.paper}
               transform="translate(9 10.5) scale(0.8889 0.9048) translate(-9 -10.5)"
             />
-            <g transform={`translate(${9 + (String(spell.level) === "1" ? -0.6 : 0)} 10)`}>
+            <g transform={`translate(${9 + (String(spell.level) === "1" ? -1.1 : 0)} 10)`}>
               <path d={DIGIT_PATHS[String(spell.level)]?.d ?? DIGIT_PATHS["0"].d} fill={theme.ink} />
             </g>
           </svg>

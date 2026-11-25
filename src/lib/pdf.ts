@@ -197,21 +197,6 @@ async function drawCard(
       height: 60,
     });
   }
-  // углы выреза — чёрные, как в макете
-  for (const [cx, cy] of [
-    [3, 3],
-    [53, 3],
-    [3, 53],
-    [53, 53],
-  ]) {
-    page.drawRectangle({
-      x: frameX + cx,
-      y: frameY - cy - 4,
-      width: 4,
-      height: 4,
-      color: ink,
-    });
-  }
 
   // Ритуал — ромб 14×16 под бейджем уровня.
   if (spell.ritual) {
@@ -245,7 +230,7 @@ async function drawCard(
   });
   const levelGlyph = DIGIT_PATHS[String(spell.level)] ?? DIGIT_PATHS["0"];
   page.drawSvgPath(levelGlyph.d, {
-    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 0.6 : 0),
+    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 1.1 : 0),
     y: yTop - BADGE.y - BADGE.h / 2 + 0.5,
     color: ink,
   });
