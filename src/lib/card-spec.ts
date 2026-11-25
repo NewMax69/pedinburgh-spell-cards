@@ -68,7 +68,7 @@ export function notchedSquarePath(inset: number, size = 60, notch = 4): string {
 export const FRAME_LAYERS = {
   plate: notchedSquarePath(0),
   outerStroke: notchedSquarePath(0.5),
-  innerStroke: notchedSquarePath(3.5),
+  innerStroke: notchedSquarePath(3),
   clip: notchedSquarePath(3),
   imageInset: 3,
   imageSize: 54,

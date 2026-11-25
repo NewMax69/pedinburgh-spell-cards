@@ -230,8 +230,8 @@ async function drawCard(
   });
   const levelGlyph = DIGIT_PATHS[String(spell.level)] ?? DIGIT_PATHS["0"];
   page.drawSvgPath(levelGlyph.d, {
-    x: x + BADGE.x + BADGE.w / 2,
-    y: yTop - BADGE.y - BADGE.h / 2,
+    x: x + BADGE.x + BADGE.w / 2 + (String(spell.level) === "1" ? 0.5 : 0),
+    y: yTop - BADGE.y - BADGE.h / 2 + 0.5,
     color: ink,
   });
 

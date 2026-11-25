@@ -195,7 +195,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
               objectFit: "cover",
               background: "linear-gradient(135deg,#1c2230,#0b0e12)",
               clipPath:
-                "polygon(0% 1.85%, 1.85% 1.85%, 1.85% 0%, 98.15% 0%, 98.15% 1.85%, 100% 1.85%, 100% 98.15%, 98.15% 98.15%, 98.15% 100%, 1.85% 100%, 1.85% 98.15%, 0% 98.15%)",
+                "polygon(0% 7.41%, 7.41% 7.41%, 7.41% 0%, 92.59% 0%, 92.59% 7.41%, 100% 7.41%, 100% 92.59%, 92.59% 92.59%, 92.59% 100%, 7.41% 100%, 7.41% 92.59%, 0% 92.59%)",
             }}
           />
         ) : (
@@ -208,7 +208,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
               height: `${FRAME_LAYERS.imageSize}pt`,
               background: "linear-gradient(135deg,#1c2230,#0b0e12)",
               clipPath:
-                "polygon(0% 1.85%, 1.85% 1.85%, 1.85% 0%, 98.15% 0%, 98.15% 1.85%, 100% 1.85%, 100% 98.15%, 98.15% 98.15%, 98.15% 100%, 1.85% 100%, 1.85% 98.15%, 0% 98.15%)",
+                "polygon(0% 7.41%, 7.41% 7.41%, 7.41% 0%, 92.59% 0%, 92.59% 7.41%, 100% 7.41%, 100% 92.59%, 92.59% 92.59%, 92.59% 100%, 7.41% 100%, 7.41% 92.59%, 0% 92.59%)",
             }}
           />
         )}
@@ -276,7 +276,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
               fill={theme.paper}
               transform="translate(9 10.5) scale(0.8889 0.9048) translate(-9 -10.5)"
             />
-            <g transform="translate(9 10.5)">
+            <g transform={`translate(${9 + (String(spell.level) === "1" ? 0.5 : 0)} 10)`}>
               <path d={DIGIT_PATHS[String(spell.level)]?.d ?? DIGIT_PATHS["0"].d} fill={theme.ink} />
             </g>
           </svg>

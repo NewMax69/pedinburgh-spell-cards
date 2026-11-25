@@ -30,9 +30,9 @@ try {
       const slots = [...document.querySelectorAll('[style*="cursor: grab"]')];
       if (slots.length < 3) return 'slots ' + slots.length;
       const dt = new DataTransfer();
-      slots[0].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
-      slots[2].dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
-      slots[2].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      slots[2].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+      slots[5].dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      slots[5].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
       return 'dropped';
     })()`,
     returnByValue: true,

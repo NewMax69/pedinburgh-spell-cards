@@ -75,7 +75,6 @@ export async function getFramePng(ink = "#141313", paper = "#FFFFFF"): Promise<s
   ctx.lineJoin = "bevel";
   ctx.stroke(new Path2D(FRAME_LAYERS.outerStroke));
   ctx.stroke(new Path2D(FRAME_LAYERS.innerStroke));
-
   const png = canvas.toDataURL("image/png");
   cache.set(key, png);
   return png;
