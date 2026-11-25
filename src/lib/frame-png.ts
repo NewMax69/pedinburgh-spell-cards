@@ -17,7 +17,7 @@ export async function clipArtPng(src: string): Promise<string> {
     canvas.height = size;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(image, 0, 0, size, size);
-    const d = 4 * (size / 54);
+    const d = 1 * (size / 54);
     ctx.globalCompositeOperation = "destination-in";
     ctx.beginPath();
     ctx.moveTo(0, d);

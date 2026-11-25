@@ -47,11 +47,42 @@ export function SheetPreview({
   const scale = width > 0 ? width / SHEET_W : 0;
   const base = pageIndex * 9;
 
+  const slotFromEvent = (event: React.DragEvent) => {
+    const el = host.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const s = rect.width / SHEET_W;
+    const x = (event.clientX - rect.left) / s;
+    const y = (event.clientY - rect.top) / s;
+    const col = Math.floor((x - START_X) / CARD_PX_W);
+    const row = Math.floor((y - START_Y) / CARD_PX_H);
+    if (col < 0 || col > 2 || row < 0 || row > 2) return null;
+    return row * 3 + col;
+  };
+
   return (
     <div
       ref={host}
       className={cn("relative w-full overflow-hidden rounded-lg border border-line bg-white", className)}
       style={{ aspectRatio: `${A4.w} / ${A4.h}` }}
+      onDragOver={(event) => {
+        if (!onReorder) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        const slot = slotFromEvent(event);
+        setOver(slot === null ? null : base + slot);
+      }}
+      onDragLeave={(event) => {
+        if (!host.current?.contains(event.relatedTarget as Node)) setOver(null);
+      }}
+      onDrop={(event) => {
+        if (!onReorder) return;
+        event.preventDefault();
+        const slot = slotFromEvent(event);
+        const from = Number(event.dataTransfer.getData("text/plain"));
+        setOver(null);
+        if (slot !== null && Number.isFinite(from)) onReorder(from, base + slot);
+      }}
     >
       {scale > 0 && (
         <div
@@ -79,19 +110,6 @@ export function SheetPreview({
                 onDragStart={(event) => {
                   event.dataTransfer.setData("text/plain", String(index));
                   event.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={(event) => {
-                  if (!onReorder) return;
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                  setOver(index);
-                }}
-                onDragLeave={() => setOver((value) => (value === index ? null : value))}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const from = Number(event.dataTransfer.getData("text/plain"));
-                  setOver(null);
-                  if (Number.isFinite(from) && onReorder) onReorder(from, index);
                 }}
                 style={{
                   position: "absolute",
