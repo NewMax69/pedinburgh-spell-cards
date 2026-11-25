@@ -62,7 +62,9 @@ export function useSpells(initial?: Spell[]) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/spells${force ? "?refresh=1" : ""}`, { cache: "no-store" });
+        const res = await fetch(force ? "/api/spells?refresh=1" : "/spells.json", {
+          cache: "no-store",
+        });
         const data = (await res.json()) as {
           spells?: Spell[];
           fetchedAt?: number;
@@ -72,7 +74,7 @@ export function useSpells(initial?: Spell[]) {
         if (!res.ok || !data.spells?.length) {
           throw new Error(data.error ?? `HTTP ${res.status}`);
         }
-        apply(data.spells, data.fetchedAt ?? Date.now(), data.source ?? "google");
+        apply(data.spells, data.fetchedAt ?? Date.now(), force ? "google" : "cache");
         write(KEYS.spells, { spells: data.spells, fetchedAt: data.fetchedAt ?? Date.now() });
       } catch (err) {
         const cached = read<CachedSpells | null>(KEYS.spells, null);

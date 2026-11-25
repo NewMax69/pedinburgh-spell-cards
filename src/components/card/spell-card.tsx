@@ -276,7 +276,7 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
               fill={theme.paper}
               transform="translate(9 10.5) scale(0.8889 0.9048) translate(-9 -10.5)"
             />
-            <g transform={`translate(${9 + (String(spell.level) === "1" ? -0.26 : 0)} 10.5)`}>
+            <g transform={`translate(${9 + (String(spell.level) === "1" ? -0.55 : 0)} 10.5)`}>
               <path d={DIGIT_PATHS[String(spell.level)]?.d ?? DIGIT_PATHS["0"].d} fill={theme.ink} />
             </g>
           </svg>

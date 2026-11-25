@@ -38,7 +38,7 @@ function groupTitle(level: number) {
   return level === 0 ? "Заговоры" : `${level} круг`;
 }
 
-export default function CatalogView({ initialSpells }: { initialSpells: Spell[] }) {
+export default function CatalogView({ initialSpells = [] }: { initialSpells?: Spell[] }) {
   const router = useRouter();
   const { spells, loading, error, refresh, source } = useSpells(initialSpells);
   const { cards: customCards, upsert } = useCustomCards();
@@ -278,24 +278,6 @@ export default function CatalogView({ initialSpells }: { initialSpells: Spell[] 
                     /
                   </kbd>
                 )}
-              </div>
-              <div className="flex items-center justify-between gap-2 text-[10.5px] text-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      source === "google" ? "bg-accent" : source === "local" ? "bg-[#d19a2f]" : "bg-muted"
-                    )}
-                  />
-                  {source === "google" ? "Данные из Google Таблицы" : source === "local" ? "Локальный кэш" : "Загрузка…"}
-                </span>
-                <button
-                  type="button"
-                  onClick={refresh}
-                  className="inline-flex items-center gap-1 font-semibold text-ink-soft transition-colors hover:text-ink"
-                >
-                  <RotateCw className={cn("h-3 w-3", loading && "animate-spin")} /> Обновить
-                </button>
               </div>
             </div>
           </div>

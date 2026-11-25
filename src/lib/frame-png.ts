@@ -51,7 +51,7 @@ export async function getFramePng(ink = "#141313", paper = "#FFFFFF"): Promise<s
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const size = 600;
+  const size = 1200;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;

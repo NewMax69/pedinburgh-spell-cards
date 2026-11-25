@@ -7,4 +7,8 @@ writeFileSync(
   "data/spells.json",
   JSON.stringify({ spells: data.spells, fetchedAt: data.fetchedAt ?? Date.now() })
 );
+writeFileSync(
+  "public/spells.json",
+  JSON.stringify({ spells: data.spells, fetchedAt: data.fetchedAt ?? Date.now() })
+);
 console.log("spells:", data.spells.length, "first:", data.spells[0]?.name);

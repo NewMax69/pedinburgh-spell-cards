@@ -177,14 +177,6 @@ async function drawCard(
   // Рамка иллюстрации: картинка в окне + единый PNG-слой рамки (без заплаток на углах).
   const frameX = x + ILLU.x;
   const frameY = yTop - ILLU.y;
-  page.drawRectangle({
-    x: frameX + 3,
-    y: frameY - 57,
-    width: 54,
-    height: 54,
-    color: paper,
-  });
-
   const artSrc = await resolveArtSrc(spell);
   const art = await embedImage(doc, await clipArtPng(artSrc), images);
   if (art) {
@@ -238,7 +230,7 @@ async function drawCard(
   });
   const levelGlyph = DIGIT_PATHS[String(spell.level)] ?? DIGIT_PATHS["0"];
   page.drawSvgPath(levelGlyph.d, {
-    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 0.26 : 0),
+    x: x + BADGE.x + BADGE.w / 2 - (String(spell.level) === "1" ? 0.55 : 0),
     y: yTop - BADGE.y - BADGE.h / 2,
     color: ink,
   });

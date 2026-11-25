@@ -272,6 +272,7 @@ export default function PrintPage() {
                               event.target.value = String(index + 1);
                             }
                           }}
+                          onFocus={(event) => event.currentTarget.select()}
                           onKeyDown={(event) => {
                             if (event.key === "Enter") (event.target as HTMLInputElement).blur();
                           }}

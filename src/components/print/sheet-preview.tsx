@@ -81,8 +81,9 @@ export function SheetPreview({
                   event.dataTransfer.effectAllowed = "move";
                 }}
                 onDragOver={(event) => {
-                  if (!spell || !onReorder) return;
+                  if (!onReorder) return;
                   event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
                   setOver(index);
                 }}
                 onDragLeave={() => setOver((value) => (value === index ? null : value))}
