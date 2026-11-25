@@ -72,7 +72,8 @@ export async function getFramePng(ink = "#141313", paper = "#FFFFFF"): Promise<s
   // две чёрные обводки
   ctx.strokeStyle = ink;
   ctx.lineWidth = 1;
-  ctx.lineJoin = "bevel";
+  ctx.lineJoin = "miter";
+  ctx.miterLimit = 4;
   ctx.stroke(new Path2D(FRAME_LAYERS.outerStroke));
   ctx.stroke(new Path2D(FRAME_LAYERS.innerStroke));
   const png = canvas.toDataURL("image/png");

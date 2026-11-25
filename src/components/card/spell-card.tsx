@@ -218,14 +218,14 @@ export const SpellCard = memo(function SpellCard({ spell, options = {}, classNam
             fill="none"
             stroke={theme.ink}
             strokeWidth="1"
-            strokeLinejoin="bevel"
+            strokeLinejoin="miter"
           />
           <path
             d={FRAME_LAYERS.innerStroke}
             fill="none"
             stroke={theme.ink}
             strokeWidth="1"
-            strokeLinejoin="bevel"
+            strokeLinejoin="miter"
           />
         </svg>
       </div>
